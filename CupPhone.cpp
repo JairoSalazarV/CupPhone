@@ -57,14 +57,14 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 	int receivedMsgLen;
 	socklen_t clilen;
 	char BUFFER[CUPPHONE_MSG_BODY_LEN];
-	struct receivedChonk{
-		unsigned char idMsg;			// Id instruction
+	typedef struct receivedChonk{
 		unsigned int consecutive;		// Consecutive
 		unsigned int numTotMsg;			// Total number of message to send
 		unsigned int bodyLen;			// Message lenght
 		int trigeredTime;           		// Time before to apply console command
 		char payload[CUPPHONE_MSG_BODY_LEN];	// message's payload
 	}receivedChonk;
+	receivedChonk tmpReceivedChonk;
 	while( true ){
 		listen(sockfd,MAX_INCOMMING_CONNECTIONS);
 		clilen = sizeof(cli_addr);
@@ -82,10 +82,10 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 
 		//Ordering frame received
 		//msgCurrentPosition = receivedMsgLen-headerLen;       
-		memcpy( &receivedChonk, BUFFER, receivedMsgLen );
+		memcpy( &tmpReceivedChonk, BUFFER, receivedMsgLen );
 
 		//Extract the message and execute instruction identified
-		printf("\n[CupPhone] idMessage(%i) n(%i)",receivedChonk.idMsg,receivedMsgLen);
+		printf("\n[CupPhone] (%i)/(%i) len(%i)",tmpReceivedChonk.consecutive,tmpReceivedChonk.numTotMsg,receivedMsgLen);
 		printf("\n");
 	}
 	
