@@ -62,7 +62,7 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 		unsigned int chonkSize;			// Independent chonk max length
 	}receivedChonk;
 		
-	unsigned int expectedNChonks, currentPosition, tmpReceivedBytes;
+	unsigned int expectedNChonks, currentPosition;
 	receivedChonk tmpNewMsgReceived;	
 	char MSG_BUFFER[CUPPHONE_MSG_BODY_LEN];
 	bzero(MSG_BUFFER, sizeof(CUPPHONE_MSG_BODY_LEN));	
@@ -112,8 +112,9 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 			printf("[CupPhone] ERROR reading from socket\n");
 			return false;
 		}
-		std::string outputFileSize = static_cast<std::string>(MSG_BUFFER);
-		printf("[CupPhone] Received File Path (%i): %s\n",receivedMsgLen,outputFileSize.c_str());
+		std::string tmpOutputFileSize 	= static_cast<std::string>(MSG_BUFFER);
+		unsigned int outputFileSize	= (unsigned int)std::stoi(tmpOutputFileSize);
+		printf("[CupPhone] Received File Path (%i): %i\n",receivedMsgLen,outputFileSize);
 		//------------------------------------------------------
 		// Open File Before Stream File
 		//------------------------------------------------------
@@ -121,48 +122,20 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 		//------------------------------------------------------
 		// Obtains File Contain 
 		//------------------------------------------------------
-		bzero(MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);
-		receivedMsgLen = read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN-1);
-		if( receivedMsgLen < 0 ){
-			printf("[CupPhone] ERROR reading from socket\n");
-			return false;
-		}
-		std::string outputFileChonk = static_cast<std::string>(MSG_BUFFER);
-		printf("[CupPhone] Received File Path (%i): %s\n",receivedMsgLen,outputFileChonk.c_str());
-		write(newsockfd,"1",1);
-		
-		
-		/*
-		//Extract the message and execute instruction identified
-		memcpy( &tmpNewMsgReceived, MSG_BUFFER, receivedMsgLen );				
-		printf(
-				"\n[CupPhone] New Stream Message nTotalBytes(%i) chonkSize(%i)",	
-				tmpNewMsgReceived.nTotalBytes,
-				tmpNewMsgReceived.chonkSize
-			);
-		printf("\n");
-		*/
-		
-		
-		//------------------------------------------------------
-		// Receive Stream of Message Payload
-		//------------------------------------------------------
-		//currentPosition 	= 0;
-		//printf("tmpNewMsgReceived.chonkSize: %i\n",tmpNewMsgReceived.chonkSize);
-		//char WHOLE_MSG[tmpNewMsgReceived.nTotalBytes];
-		
-		//char TMP_BUFFER[tmpNewMsgReceived.chonkSize];
-		//WHOLE_MSG 	= (char*)malloc(tmpNewMsgReceived.nTotalBytes);
-		//TMP_BUFFER = (char*)realloc(&TMP_BUFFER[0],tmpNewMsgReceived.chonkSize);
-		//bzero(TMP_BUFFER,tmpNewMsgReceived.chonkSize);
-		/*
-		while( currentPosition < tmpNewMsgReceived.nTotalBytes ){			
-			tmpReceivedBytes 	= read(newsockfd,TMP_BUFFER,tmpNewMsgReceived.chonkSize);			
-			memcpy( &WHOLE_MSG[currentPosition], &TMP_BUFFER[0], tmpReceivedBytes );
-			currentPosition		= currentPosition + tmpReceivedBytes;
-			printf("tmpReceivedBytes: %i currentPosition: %i \n",tmpReceivedBytes,currentPosition);			
-		}
-		*/
+		currentPosition = 0;		
+		do{
+			bzero(MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);			
+			receivedMsgLen 	= read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN-1);						
+			printf("receivedMsgLen: %i currentPosition: %i \n",receivedMsgLen,currentPosition);
+			currentPosition	= currentPosition + receivedMsgLen;
+			if( currentPosition >= outputFileSize ){
+				printf("Successfully Transmited\n");
+			}else{
+				printf("currentPosition: %i outputFileSize: %i \n",currentPosition,outputFileSize);
+			}
+			fflush(stdout);
+		}while( currentPosition < outputFileSize );
+
 		
 		close(newsockfd);		
 		
