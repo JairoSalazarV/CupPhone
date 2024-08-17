@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <math.h>
 #include <sstream>
+#include <fstream>
 
 #define CUPPHONE_MAX_N_THREADS  	5
 #define	CUPPHONE_OK			1
@@ -80,22 +81,10 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 			printf("[CupPhone] Accepted Socket Connection\n");
 		}
 		//------------------------------------------------------
-		// Obtains Command (Replace, Attatch)
-		//------------------------------------------------------
-		bzero(MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);
-		receivedMsgLen = read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN-1);
-		if( receivedMsgLen < 0 ){
-			printf("[CupPhone] ERROR reading from socket\n");
-			return false;
-		}
-		std::string strMsgReceived = static_cast<std::string>(MSG_BUFFER);
-		printf("[CupPhone] Received Msg Length (%i): %s\n",receivedMsgLen,strMsgReceived.c_str());
-		write(newsockfd,"1",1);
-		//------------------------------------------------------
 		// Obtains File Path 
 		//------------------------------------------------------
 		bzero(MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);
-		receivedMsgLen = read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN-1);
+		receivedMsgLen = read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);
 		if( receivedMsgLen < 0 ){
 			printf("[CupPhone] ERROR reading from socket\n");
 			return false;
@@ -107,37 +96,93 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 		// Obtains File Size 
 		//------------------------------------------------------
 		bzero(MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);
-		receivedMsgLen = read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN-1);
+		receivedMsgLen = read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);
 		if( receivedMsgLen < 0 ){
 			printf("[CupPhone] ERROR reading from socket\n");
 			return false;
 		}
 		std::string tmpOutputFileSize 	= static_cast<std::string>(MSG_BUFFER);
-		unsigned int outputFileSize	= (unsigned int)std::stoi(tmpOutputFileSize);
-		printf("[CupPhone] Received File Path (%i): %i\n",receivedMsgLen,outputFileSize);
-		//------------------------------------------------------
-		// Open File Before Stream File
-		//------------------------------------------------------
-		write(newsockfd,"1",1);
+		unsigned int outputFileSize	= atoi(tmpOutputFileSize.c_str());
+		printf("[CupPhone] Received File Size (%i): %i\n",receivedMsgLen,outputFileSize);
+		write(newsockfd,"1",1);	
 		//------------------------------------------------------
 		// Obtains File Contain 
 		//------------------------------------------------------
-		currentPosition = 0;		
-		do{
+		currentPosition = 0;
+		std::ofstream fp;
+		fp.open( outputFilePath.c_str(), std::ios::out | std::ios::binary );	
+		bool primeraVez = true;	
+		while( currentPosition < outputFileSize ){
+			//----------------------------------------------
+			// Receive chonk and append it into received file
+			//----------------------------------------------
 			bzero(MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);			
-			receivedMsgLen 	= read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN-1);						
-			printf("receivedMsgLen: %i currentPosition: %i \n",receivedMsgLen,currentPosition);
-			currentPosition	= currentPosition + receivedMsgLen;
+			receivedMsgLen 	= read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN+1);			
+			fp.write(MSG_BUFFER,receivedMsgLen-1);
+			currentPosition += receivedMsgLen-1;
+			//----------------------------------------------
+			// Show Status to Users
+			//----------------------------------------------
+			//currentPosition	= currentPosition + receivedMsgLen - 1;			
+			printf("receivedMsgLen: %i currentPosition: %i (of %i)\n",receivedMsgLen,currentPosition,outputFileSize);
+			printf( "\nCONTENIDO: " );
+			for(int i=0; i<receivedMsgLen; i++ ){
+				printf( "%c", MSG_BUFFER[i] );
+			}
+			printf( "\n" );
+			//----------------------------------------------
+			// Append into file
+			//----------------------------------------------					
 			if( currentPosition >= outputFileSize ){
 				printf("Successfully Transmited\n");
+				fflush(stdout);
 			}else{
-				printf("currentPosition: %i outputFileSize: %i \n",currentPosition,outputFileSize);
-			}
-			fflush(stdout);
-		}while( currentPosition < outputFileSize );
-
+				//printf("currentPosition: %i outputFileSize: %i \n",currentPosition,outputFileSize);
+				//receivedFile << MSG_BUFFER;
+			}			
+			write(newsockfd,"1",1);
+		}
+		fflush(stdout);
+		fp.close();
+		close(newsockfd);
 		
-		close(newsockfd);		
+		
+		
+		
+		/*
+		//------------------------------------------------------
+		// Obtains File Contain 
+		//------------------------------------------------------
+		std::remove(outputFilePath.c_str());
+		FILE* outputFile;
+		outputFile = fopen(outputFilePath.c_str(),"w");
+		currentPosition=0;		
+		while( currentPosition < outputFileSize ){
+			//----------------------------------------------
+			// Receive chonk and append it into received file
+			//----------------------------------------------
+			bzero(MSG_BUFFER,CUPPHONE_MSG_BODY_LEN);			
+			receivedMsgLen 	= read(newsockfd,MSG_BUFFER,CUPPHONE_MSG_BODY_LEN+1);
+			//----------------------------------------------
+			// Append into file
+			//----------------------------------------------
+			for(int i=0; i<receivedMsgLen-1; i++ ){
+				fprintf(outputFile,(char*)&MSG_BUFFER[i]);
+				currentPosition++;
+			}
+			//----------------------------------------------
+			// Show Status to Users
+			//----------------------------------------------		
+			printf("receivedMsgLen: %i currentPosition: %i (of %i)\n",receivedMsgLen,currentPosition,outputFileSize);			
+			if( currentPosition >= outputFileSize ){
+				printf("Successfully Transmited\n");
+			}
+			write(newsockfd,"1",2);
+		}
+		fflush(stdout);
+		fclose(outputFile);
+		close(newsockfd);
+				*/
 		
 		
 	}
@@ -145,6 +190,21 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 	
 	return true;
 }
+
+std::string file2String( const std::string &fileName )
+{
+	std::ifstream t(fileName.c_str());
+	std::string str;
+	t.seekg(0,std::ios::end);
+	str.reserve(t.tellg());
+	t.seekg(0,std::ios::beg);
+	str.assign(
+					(std::istreambuf_iterator<char>(t)),
+					std::istreambuf_iterator<char>()
+			  );
+	return str;
+}
+
 
 int main(int argc, char *argv[]){
 	
