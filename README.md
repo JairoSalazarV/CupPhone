@@ -2,4 +2,4 @@
 Make the socket communication easy for c/c++ developers
 
 #Compile
-g++ CupPhone.c -o CupPhone;
+g++ CupPhone.cpp -o CupPhone;
