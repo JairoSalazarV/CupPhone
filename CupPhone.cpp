@@ -28,7 +28,7 @@
 //#include <streambuf>
 //#include <ctime>
 
-using namespace std;
+//using namespace std;
 
 //======================================================================
 // CREATE A SOCKET AND STAYS LISTENING FOR INCOMMING MESSAGES
@@ -126,8 +126,8 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 			//----------------------------------------------
 			// Append into file
 			//----------------------------------------------					
-			if( currentPosition >= outputFileSize ){
-				printf("Successfully Transmited\n");
+			if( currentPosition == outputFileSize ){
+				printf("[CupPhone] File Successfully Received\n");
 				fflush(stdout);
 			}
 		}
@@ -140,7 +140,9 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 	
 	return true;
 }
-
+//======================================================================
+// PREPARE FILE CONTAIN INTO A STRING TO BE TRANSMITTED
+//======================================================================
 std::string file2String( const std::string &fileName ){
 	std::ifstream t(fileName.c_str());
 	std::string str;
