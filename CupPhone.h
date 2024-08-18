@@ -9,25 +9,10 @@
 #include <fstream>
 
 #define CUPPHONE_MAX_N_THREADS  	5
-#define	CUPPHONE_OK			1
-#define	CUPPHONE_ERROR			0
-#define	CUPPHONE_FAIL			2
+#define	CUPPHONE_OK					1
+#define	CUPPHONE_ERROR				0
+#define	CUPPHONE_FAIL				2
 #define CUPPHONE_MSG_BODY_LEN		1024
-
-//#include <pthread.h>
-//#include <stdlib.h>
-//#include <sys/types.h> 
-//#include <sys/socket.h>
-//#include <ifaddrs.h>
-//#include <netdb.h>
-//#include <string>
-//#include <math.h>
-//#include <fstream>
-//#include <iostream>
-//#include <sys/stat.h>
-//#include <sstream>
-//#include <streambuf>
-//#include <ctime>
 
 using namespace std;
 
@@ -260,17 +245,4 @@ bool openListenerSocket( const int& PORT, const int& MAX_INCOMMING_CONNECTIONS=1
 	
 	return true;
 }
-
-int main( int argc, char *argv[] ){
-	
-	sendLocalFile( 
-					77778,
-					"192.168.100.100",
-					"./testImg.png",
-					"./CUPPHONE_BIN/testImg.png"
-	);
-	
-	return 0;
-}
-
 
